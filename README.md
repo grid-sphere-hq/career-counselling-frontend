@@ -1,6 +1,6 @@
 # project_context.md
 # AI Career Counselling Platform — Master Architecture Context
- 
+ this is changeed
 > **Purpose:** This file serves as the single source of truth for system design, API documentation,
 > architecture diagrams, sequence diagrams, deployment docs, and user guides.
 > Generated from: project structure, ERD, requirements, and data flow specifications.
