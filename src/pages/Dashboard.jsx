@@ -624,11 +624,61 @@ export default function Dashboard() {
 
   const startJourney = async () => {
     try {
+      // Always confirm a roadmap exists before attempting to start it.
+      let roadmap;
+
+      try {
+        roadmap = await roadmapApi.getActiveRoadmap();
+      } catch (error) {
+        // A 404 means there is no active roadmap yet; create one below.
+        if (error?.status !== 404) {
+          throw error;
+        }
+      }
+
+      if (!roadmap) {
+        // Prefer the career already loaded in the dashboard; refresh from the
+        // API if it is not available in local component state.
+        let careerTitle = selectedCareer?.title;
+
+        if (!careerTitle) {
+          const savedCareer = await getSelectedCareer();
+          careerTitle = savedCareer?.career_title;
+        }
+
+        if (!careerTitle) {
+          toast.error('Please select a career recommendation first.');
+          navigate('/discovery-report');
+          return;
+        }
+
+        toast.loading('Creating your personalized roadmap...', {
+          id: 'create-career-roadmap',
+        });
+
+        const generatedRoadmap = await roadmapApi.generateRoadmap(careerTitle);
+        await roadmapApi.saveRoadmap(generatedRoadmap);
+
+        toast.dismiss('create-career-roadmap');
+      }
+
       await roadmapApi.startRoadmap();
+
+      // Refresh the dashboard state so the button changes to Continue.
+      const active = await roadmapApi.getActiveRoadmap();
+      setActiveRoadmap(active);
+
       toast.success('Your career journey has started!');
+      navigate('/roadmap');
     } catch (error) {
+      toast.dismiss('create-career-roadmap');
       console.error('Error starting roadmap:', error);
-      toast.error('Failed to start roadmap.');
+
+      const message =
+        error?.data?.detail ||
+        error?.message ||
+        'Failed to create or start your roadmap.';
+      toast.error(message);
     }
   };
 
